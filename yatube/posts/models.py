@@ -1,8 +1,8 @@
-from django.db import models
 from django.contrib.auth import get_user_model
-from django.conf import settings
+from django.db import models
 
 User = get_user_model()
+NUMBER_OF_CHAR: int = 15
 
 
 class Group(models.Model):
@@ -63,4 +63,4 @@ class Post(models.Model):
         verbose_name_plural = 'Записи'
 
     def __str__(self):
-        return self.text[:settings.NUMBER_OF_CHAR]
+        return self.text[:NUMBER_OF_CHAR]

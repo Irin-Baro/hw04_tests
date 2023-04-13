@@ -27,8 +27,6 @@ ALLOWED_HOSTS = [
 
 POST_PER_PAGE: int = 10
 
-NUMBER_OF_CHAR: int = 15
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

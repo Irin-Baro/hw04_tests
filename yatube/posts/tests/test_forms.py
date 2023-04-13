@@ -7,22 +7,27 @@ from django.urls import reverse
 from django.conf import settings
 
 from posts.models import Post, Group
-from posts.forms import PostForm
 
 User = get_user_model()
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
-class PostFormsTests(TestCase):
+class PostFormTests(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='post_author')
 
         cls.group = Group.objects.create(
-            title='Тестовый заголовок',
-            description='Тестовое описание',
+            title='Заголовок группы',
+            description='Описание группы',
             slug='test-slug',
+        )
+
+        cls.another_group = Group.objects.create(
+            title='Заголовок другой группы',
+            description='Описание другой группы',
+            slug='another-slug',
         )
 
         cls.post = Post.objects.create(
@@ -30,10 +35,8 @@ class PostFormsTests(TestCase):
             text='Тестовый пост',
             group=cls.group,
         )
-        cls.form = PostForm()
 
     def setUp(self):
-        self.unauthorized_user = Client()
         self.authorized_user = Client()
         self.authorized_user.force_login(self.user)
 
@@ -46,7 +49,7 @@ class PostFormsTests(TestCase):
         """Проверка создания новой записи."""
         posts_count = Post.objects.count()
         form_data = {
-            'text': 'Текст из формы',
+            'text': 'Новый пост',
             'group': self.group.id,
         }
         response = self.authorized_user.post(
@@ -55,6 +58,10 @@ class PostFormsTests(TestCase):
             follow=True
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
+        post = Post.objects.first()
+        self.assertEqual(post.text, form_data['text'])
+        self.assertEqual(post.author, self.post.author)
+        self.assertEqual(post.group_id, form_data['group'])
         self.assertRedirects(response, reverse(
             'posts:profile', kwargs={'username': self.user.username}))
 
@@ -62,8 +69,8 @@ class PostFormsTests(TestCase):
         """Проверка редактирования записи."""
         post_count = Post.objects.count()
         form_data = {
-            'text': 'Измененный текст',
-            'group': self.group.id,
+            'text': 'Измененный пост',
+            'group': self.another_group.id,
         }
         response = self.authorized_user.post(
             reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
@@ -71,5 +78,9 @@ class PostFormsTests(TestCase):
             follow=True
         )
         self.assertEqual(Post.objects.count(), post_count)
+        post = Post.objects.first()
+        self.assertEqual(post.text, form_data['text'])
+        self.assertEqual(post.author, self.post.author)
+        self.assertEqual(post.group_id, form_data['group'])
         self.assertRedirects(response, reverse(
             'posts:post_detail', kwargs={'post_id': self.post.id}))
