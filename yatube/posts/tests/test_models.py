@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Group, Post, NUMBER_OF_CHAR
+from ..models import Group, Post
 
 
 User = get_user_model()
@@ -25,7 +25,7 @@ class PostModelTest(TestCase):
     def test_models_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
         str_values = [
-            (str(self.post), self.post.text[:NUMBER_OF_CHAR]),
+            (str(self.post), self.post.text[:Post.NUMBER_OF_CHAR]),
             (str(self.group), self.group.title)
         ]
         for str_value, expected_value in str_values:

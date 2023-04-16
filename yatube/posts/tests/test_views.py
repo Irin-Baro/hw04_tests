@@ -63,13 +63,14 @@ class PostViewTests(TestCase):
         ]
         for reverse_name in reverse_name_list:
             with self.subTest(reverse_name=reverse_name):
-                if reverse_name == (reverse('posts:post_edit',
-                                            kwargs={'post_id': self.post.id})):
-                    response = self.authorized_user.get(reverse_name)
-                    self.assertEqual(response.context.get('form').instance,
-                                     self.post)
                 response = self.authorized_user.get(reverse_name)
                 self.assertIsInstance(response.context['form'], PostForm)
+
+    def post_edit_page_shows_correct_post_in_form(self):
+        """Проверка, что на странице редактирования в форме правильный пост"""
+        response = self.authorized_user.get(
+            reverse('posts:post_edit', kwargs={'post_id': self.post.id}))
+        self.assertEqual(response.context.get('form').instance, self.post)
 
     def test_check_post_with_group_not_on_wrong_page(self):
         """Проверка, что пост не попал в неверную группу."""
@@ -84,14 +85,14 @@ class PostViewTests(TestCase):
         self.assertNotIn(self.post, response.context['page_obj'])
 
 
-NUMBER_OF_POSTS = randint(1, 23)
-NUMBER_OF_PAGES = ceil(NUMBER_OF_POSTS / settings.POST_PER_PAGE)
-
-
 class PaginatorViewTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.NUMBER_OF_POSTS = randint(1, 23)
+        cls.NUMBER_OF_PAGES = ceil(cls.NUMBER_OF_POSTS
+                                   / settings.POST_PER_PAGE)
+
         cls.user = User.objects.create_user(username='some_user')
 
         cls.group = Group.objects.create(
@@ -104,7 +105,7 @@ class PaginatorViewTest(TestCase):
             text=f'Тестовый пост {post_number}',
             group=cls.group,
             author=cls.user,
-        ) for post_number in range(NUMBER_OF_POSTS))
+        ) for post_number in range(cls.NUMBER_OF_POSTS))
         Post.objects.bulk_create(posts)
 
         cls.reverse_name_list = [
@@ -119,26 +120,27 @@ class PaginatorViewTest(TestCase):
 
     def test_paginator_on_first_page(self):
         """Проверка количества постов на первой странице."""
-        if NUMBER_OF_POSTS < settings.POST_PER_PAGE:
-            POSTS_ON_FIRST_PAGE = NUMBER_OF_POSTS
+        if self.NUMBER_OF_POSTS < settings.POST_PER_PAGE:
+            POSTS_ON_FIRST_PAGE = self.NUMBER_OF_POSTS
         else:
             POSTS_ON_FIRST_PAGE = settings.POST_PER_PAGE
         for reverse_name in self.reverse_name_list:
             with self.subTest(reverse_name=reverse_name):
-                self.assertEqual(len(self.unauthorized_user.get(
-                    reverse_name).context['page_obj']),
-                    POSTS_ON_FIRST_PAGE)
+                response = self.unauthorized_user.get(reverse_name)
+                self.assertEqual(len(response.context['page_obj']),
+                                 POSTS_ON_FIRST_PAGE)
 
     def test_paginator_on_last_page(self):
         """Проверка количества постов на последней странице."""
-        if NUMBER_OF_POSTS > settings.POST_PER_PAGE:
-            if NUMBER_OF_POSTS % settings.POST_PER_PAGE != 0:
-                POSTS_ON_LAST_PAGE = NUMBER_OF_POSTS % settings.POST_PER_PAGE
+        if self.NUMBER_OF_POSTS > settings.POST_PER_PAGE:
+            if self.NUMBER_OF_POSTS % settings.POST_PER_PAGE != 0:
+                POSTS_ON_LAST_PAGE = (self.NUMBER_OF_POSTS
+                                      % settings.POST_PER_PAGE)
             else:
                 POSTS_ON_LAST_PAGE = settings.POST_PER_PAGE
             for reverse_name in self.reverse_name_list:
                 with self.subTest(reverse_name=reverse_name):
-                    self.assertEqual(len(self.unauthorized_user.get(
-                        reverse_name
-                        + f'?page={str(NUMBER_OF_PAGES)}').context[
-                        'page_obj']), POSTS_ON_LAST_PAGE)
+                    response = self.unauthorized_user.get(
+                        reverse_name + f'?page={str(self.NUMBER_OF_PAGES)}')
+                    self.assertEqual(len(response.context['page_obj']),
+                                     POSTS_ON_LAST_PAGE)

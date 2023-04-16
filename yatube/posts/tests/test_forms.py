@@ -17,6 +17,7 @@ class PostFormTests(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='post_author')
+        cls.another_user = User.objects.create_user(username='new_post_author')
 
         cls.group = Group.objects.create(
             title='Заголовок группы',
@@ -47,29 +48,31 @@ class PostFormTests(TestCase):
 
     def test_create_new_post(self):
         """Проверка создания новой записи."""
+        another_authorized_user = Client()
+        another_authorized_user.force_login(self.another_user)
         posts_count = Post.objects.count()
         form_data = {
             'text': 'Новый пост',
             'group': self.group.id,
         }
-        response = self.authorized_user.post(
+        response = another_authorized_user.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
-        post = Post.objects.first()
+        post = Post.objects.latest('id')
         self.assertEqual(post.text, form_data['text'])
-        self.assertEqual(post.author, self.post.author)
+        self.assertEqual(post.author, self.another_user)
         self.assertEqual(post.group_id, form_data['group'])
         self.assertRedirects(response, reverse(
-            'posts:profile', kwargs={'username': self.user.username}))
+            'posts:profile', kwargs={'username': self.another_user.username}))
 
     def test_edit_post(self):
         """Проверка редактирования записи."""
         post_count = Post.objects.count()
         form_data = {
-            'text': 'Измененный пост',
+            'text': 'Измененный текст',
             'group': self.another_group.id,
         }
         response = self.authorized_user.post(
@@ -78,7 +81,7 @@ class PostFormTests(TestCase):
             follow=True
         )
         self.assertEqual(Post.objects.count(), post_count)
-        post = Post.objects.first()
+        post = Post.objects.latest('id')
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.author, self.post.author)
         self.assertEqual(post.group_id, form_data['group'])

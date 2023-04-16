@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 User = get_user_model()
-NUMBER_OF_CHAR: int = 15
 
 
 class Group(models.Model):
@@ -32,6 +31,8 @@ class Group(models.Model):
 
 class Post(models.Model):
     """Модель записи"""
+    NUMBER_OF_CHAR: int = 15
+
     text = models.TextField(
         verbose_name='Текст записи',
         help_text='Разместите здесь текст'
@@ -63,4 +64,4 @@ class Post(models.Model):
         verbose_name_plural = 'Записи'
 
     def __str__(self):
-        return self.text[:NUMBER_OF_CHAR]
+        return self.text[:self.NUMBER_OF_CHAR]

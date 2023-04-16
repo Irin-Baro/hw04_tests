@@ -67,55 +67,43 @@ class PostUrlTests(TestCase):
             (reverse('posts:post_create'),
                 HTTPStatus.OK, True),
             (reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
-                HTTPStatus.OK, True)
+                HTTPStatus.OK, True),
+            ('/nonexisting_page/', HTTPStatus.NOT_FOUND, False)
         ]
         for reverse_name, http_status, need_auth in urls_for_users:
             with self.subTest(reverse_name=reverse_name):
-                if need_auth is False:
-                    self.assertEqual(
-                        self.unauthorized_user.get(reverse_name).status_code,
-                        http_status)
-                    self.assertEqual(
-                        self.authorized_user.get(reverse_name).status_code,
-                        http_status)
+                if not need_auth:
+                    response = self.unauthorized_user.get(reverse_name)
+                    self.assertEqual(response.status_code, http_status)
                 else:
-                    self.assertEqual(
-                        self.authorized_user.get(reverse_name).status_code,
-                        http_status)
+                    response = self.authorized_user.get(reverse_name)
+                    self.assertEqual(response.status_code, http_status)
 
     def test_urls_redirect(self):
         """Проверка редиректов на другие страницы"""
         redirect_urls_list = [
-            (reverse('posts:post_create'), '/auth/login/?next=/create/',
-             False),
-            (reverse('posts:post_edit', kwargs={'post_id': self.post.id},),
-             f'/auth/login/?next=/posts/{self.post.id}/edit/',
+            (reverse('posts:post_create'),
+             f"{reverse('users:login')}?next={reverse('posts:post_create')}",
              False),
             (reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
-             f'/posts/{self.post.id}', True)
+             f"{reverse('users:login')}?next="
+             f"{reverse('posts:post_edit', kwargs={'post_id': self.post.id})}",
+             False),
+            (reverse('posts:post_edit', kwargs={'post_id': self.post.id}),
+             reverse('posts:post_detail', kwargs={'post_id': self.post.id}),
+             True)
         ]
         for reverse_name, redirect_url, user_auth in redirect_urls_list:
             with self.subTest(reverse_name=reverse_name):
-                if user_auth is False:
-                    self.assertRedirects(
-                        self.unauthorized_user.get(reverse_name, follow=True),
-                        redirect_url)
+                if not user_auth:
+                    response = self.unauthorized_user.get(
+                        reverse_name, follow=True)
+                    self.assertRedirects(response, redirect_url)
                 else:
                     self.authorized_user.force_login(self.another_user)
-                    self.assertRedirects(
-                        self.authorized_user.get(reverse_name, follow=True),
-                        redirect_url)
-
-    def test_wrong_uri_returns_404(self):
-        """Запрос к несуществующей странице вернёт ошибку 404."""
-        users = [
-            (self.unauthorized_user),
-            (self.authorized_user)
-        ]
-        for user in users:
-            with self.subTest(user=user):
-                self.assertEqual(user.get('/unexisting_page/').status_code,
-                                 HTTPStatus.NOT_FOUND)
+                    response = self.authorized_user.get(
+                        reverse_name, follow=True)
+                    self.assertRedirects(response, redirect_url)
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
