@@ -74,10 +74,8 @@ class PostUrlTests(TestCase):
             with self.subTest(reverse_name=reverse_name):
                 if not need_auth:
                     response = self.unauthorized_user.get(reverse_name)
-                    self.assertEqual(response.status_code, http_status)
-                else:
-                    response = self.authorized_user.get(reverse_name)
-                    self.assertEqual(response.status_code, http_status)
+                response = self.authorized_user.get(reverse_name)
+                self.assertEqual(response.status_code, http_status)
 
     def test_urls_redirect(self):
         """Проверка редиректов на другие страницы"""
@@ -98,12 +96,11 @@ class PostUrlTests(TestCase):
                 if not user_auth:
                     response = self.unauthorized_user.get(
                         reverse_name, follow=True)
-                    self.assertRedirects(response, redirect_url)
                 else:
                     self.authorized_user.force_login(self.another_user)
                     response = self.authorized_user.get(
                         reverse_name, follow=True)
-                    self.assertRedirects(response, redirect_url)
+                self.assertRedirects(response, redirect_url)
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""

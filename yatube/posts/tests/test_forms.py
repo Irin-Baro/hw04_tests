@@ -48,23 +48,23 @@ class PostFormTests(TestCase):
 
     def test_create_new_post(self):
         """Проверка создания новой записи."""
-        another_authorized_user = Client()
-        another_authorized_user.force_login(self.another_user)
+        self.authorized_user.force_login(self.another_user)
         posts_count = Post.objects.count()
         form_data = {
             'text': 'Новый пост',
             'group': self.group.id,
         }
-        response = another_authorized_user.post(
+        response = self.authorized_user.post(
             reverse('posts:post_create'),
             data=form_data,
             follow=True
         )
         self.assertEqual(Post.objects.count(), posts_count + 1)
-        post = Post.objects.latest('id')
-        self.assertEqual(post.text, form_data['text'])
-        self.assertEqual(post.author, self.another_user)
-        self.assertEqual(post.group_id, form_data['group'])
+        self.assertTrue(Post.objects.filter(
+            text=form_data['text'],
+            author=self.another_user,
+            group_id=form_data['group']).exists()
+        )
         self.assertRedirects(response, reverse(
             'posts:profile', kwargs={'username': self.another_user.username}))
 
@@ -81,7 +81,7 @@ class PostFormTests(TestCase):
             follow=True
         )
         self.assertEqual(Post.objects.count(), post_count)
-        post = Post.objects.latest('id')
+        post = Post.objects.get(id=self.post.id)
         self.assertEqual(post.text, form_data['text'])
         self.assertEqual(post.author, self.post.author)
         self.assertEqual(post.group_id, form_data['group'])

@@ -89,9 +89,7 @@ class PaginatorViewTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.NUMBER_OF_POSTS = randint(1, 23)
-        cls.NUMBER_OF_PAGES = ceil(cls.NUMBER_OF_POSTS
-                                   / settings.POST_PER_PAGE)
+        cls.number_of_posts = randint(1, 23)
 
         cls.user = User.objects.create_user(username='some_user')
 
@@ -105,7 +103,7 @@ class PaginatorViewTest(TestCase):
             text=f'Тестовый пост {post_number}',
             group=cls.group,
             author=cls.user,
-        ) for post_number in range(cls.NUMBER_OF_POSTS))
+        ) for post_number in range(cls.number_of_posts))
         Post.objects.bulk_create(posts)
 
         cls.reverse_name_list = [
@@ -120,27 +118,29 @@ class PaginatorViewTest(TestCase):
 
     def test_paginator_on_first_page(self):
         """Проверка количества постов на первой странице."""
-        if self.NUMBER_OF_POSTS < settings.POST_PER_PAGE:
-            POSTS_ON_FIRST_PAGE = self.NUMBER_OF_POSTS
+        if self.number_of_posts < settings.POST_PER_PAGE:
+            posts_on_first_page = self.number_of_posts
         else:
-            POSTS_ON_FIRST_PAGE = settings.POST_PER_PAGE
+            posts_on_first_page = settings.POST_PER_PAGE
         for reverse_name in self.reverse_name_list:
             with self.subTest(reverse_name=reverse_name):
                 response = self.unauthorized_user.get(reverse_name)
                 self.assertEqual(len(response.context['page_obj']),
-                                 POSTS_ON_FIRST_PAGE)
+                                 posts_on_first_page)
 
     def test_paginator_on_last_page(self):
         """Проверка количества постов на последней странице."""
-        if self.NUMBER_OF_POSTS > settings.POST_PER_PAGE:
-            if self.NUMBER_OF_POSTS % settings.POST_PER_PAGE != 0:
-                POSTS_ON_LAST_PAGE = (self.NUMBER_OF_POSTS
+        last_page_number = ceil(self.number_of_posts
+                                / settings.POST_PER_PAGE)
+        if self.number_of_posts > settings.POST_PER_PAGE:
+            if self.number_of_posts % settings.POST_PER_PAGE != 0:
+                posts_on_last_page = (self.number_of_posts
                                       % settings.POST_PER_PAGE)
             else:
-                POSTS_ON_LAST_PAGE = settings.POST_PER_PAGE
+                posts_on_last_page = settings.POST_PER_PAGE
             for reverse_name in self.reverse_name_list:
                 with self.subTest(reverse_name=reverse_name):
                     response = self.unauthorized_user.get(
-                        reverse_name + f'?page={str(self.NUMBER_OF_PAGES)}')
+                        reverse_name + f'?page={str(last_page_number)}')
                     self.assertEqual(len(response.context['page_obj']),
-                                     POSTS_ON_LAST_PAGE)
+                                     posts_on_last_page)
