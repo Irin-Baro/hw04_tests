@@ -59,11 +59,8 @@ class PostFormTests(TestCase):
             data=form_data,
             follow=True
         )
-        posts_count_after_test = Post.objects.count()
-        expected_posts_number = 1
-        if posts_count_after_test == expected_posts_number:
-            new_post = Post.objects.get()
-        self.assertEqual(posts_count_after_test, expected_posts_number)
+        self.assertEqual(Post.objects.count(), 1)
+        new_post = Post.objects.get()
         self.assertEqual(new_post.text, form_data['text'])
         self.assertEqual(new_post.author, self.another_user)
         self.assertEqual(new_post.group_id, form_data['group'])
