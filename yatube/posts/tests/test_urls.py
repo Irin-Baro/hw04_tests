@@ -75,8 +75,7 @@ class PostUrlTests(TestCase):
                 if not need_auth:
                     response = self.unauthorized_user.get(reverse_name)
                 else:
-                    response = self.unauthorized_user.get(reverse_name)
-                response = self.authorized_user.get(reverse_name)
+                    response = self.authorized_user.get(reverse_name)
                 self.assertEqual(response.status_code, http_status)
 
     def test_urls_redirect(self):
